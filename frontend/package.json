@@ -15,7 +15,6 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "typed-emitter": "^2.1.0",
     "typescript": "latest"
   }
 }
