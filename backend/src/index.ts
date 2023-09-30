@@ -1,5 +1,6 @@
 import { GatewayIntentBits } from "discord.js";
 import { Client } from "discordx";
+import "@/discord/GameCommands";
 
 import { createServer } from "node:http";
 import { Server } from "socket.io";
@@ -46,9 +47,6 @@ client
       `Discord bot has been logged in as ${client.user?.tag}(${client.application?.id})`
     );
     await client.initApplicationCommands();
-  })
-  .on("messageCreate", (message) => {
-    client.executeCommand(message);
   })
   .on("interactionCreate", (interaction) => {
     client.executeInteraction(interaction);

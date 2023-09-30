@@ -4,7 +4,7 @@ import type TypedEmitter from "typed-emitter";
 
 type EventsMap = {
   GAME_STARTED: (gameId: string) => void;
-  GAME_ENDED: (gameId: string) => void;
+  GAME_ENDED: (gameId: string, isWin: boolean) => void;
 };
 
 class GameManager extends (EventEmitter as new () => TypedEmitter<EventsMap>) {
@@ -14,11 +14,12 @@ class GameManager extends (EventEmitter as new () => TypedEmitter<EventsMap>) {
     const game = new Game(correctAnswer, wordAmount);
     this.games[game.id] = game;
     this.emit("GAME_STARTED", game.id);
+    return game;
   }
 
-  public endGame(id: string) {
+  public endGame(id: string, isWin: boolean) {
     delete this.games[id];
-    this.emit("GAME_ENDED", id);
+    this.emit("GAME_ENDED", id, isWin);
   }
 
   public getGameList() {
