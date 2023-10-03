@@ -1,9 +1,14 @@
-// Game state를 embed에 render하기 위한 매니저
-
-import Game from "@/core/Game";
-import { EmbedBuilder } from "discord.js";
+import { EmbedBuilder, AttachmentBuilder } from "discord.js";
 import { isUnicodeEqual } from "@/utils/isUnicodeEqual";
 import GameManager from "@/core/GameManager";
+import Game from "@/core/Game";
+
+// Game state를 embed에 render하기 위한 매니저
+
+const lifeImageAttachments = Array.from(
+  { length: 11 },
+  (_, i) => new AttachmentBuilder(`assets/images/${i}.jpg`)
+);
 
 class GameEmbed {
   embed!: Discord.EmbedBuilder;
@@ -19,9 +24,15 @@ class GameEmbed {
   async send() {
     this.updateEmbed();
     if (this.message) {
-      this.message.edit({ embeds: [this.embed] });
+      this.message.edit({
+        embeds: [this.embed],
+        files: [lifeImageAttachments[10 - this.game.life]],
+      });
     } else {
-      this.message = await this.channel.send({ embeds: [this.embed] });
+      this.message = await this.channel.send({
+        embeds: [this.embed],
+        files: [lifeImageAttachments[10 - this.game.life]],
+      });
     }
   }
 
