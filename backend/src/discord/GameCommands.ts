@@ -66,7 +66,7 @@ abstract class GameCommands {
       interaction.reply("that game is not found.");
       return;
     }
-    word = [...word][0];
+    word = /\d*/g.test(word) ? String.fromCodePoint(+word) : [...word][0];
 
     try {
       const found = game.try(word);
