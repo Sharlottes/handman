@@ -1,5 +1,5 @@
+import { displaySupportedUnicode } from "@/utils/displaySupportedUnicode";
 import { EmbedBuilder, AttachmentBuilder } from "discord.js";
-import { isUnicodeEqual } from "@/utils/isUnicodeEqual";
 import GameManager from "@/core/GameManager";
 import Game from "@/core/Game";
 
@@ -39,21 +39,22 @@ class GameEmbed {
   updateEmbed() {
     this.embed = new EmbedBuilder({
       title: "Hangman Game",
-      description: this.game.correctAnswerWords
+      description: Array.from(this.game.correctAnswerWords)
         .map(
-          (answerUni) =>
-            this.game.correctWords.find((correctedUni) =>
-              isUnicodeEqual(answerUni, correctedUni)
-            )
-              ? String.fromCharCode(...answerUni)
+          (answerCharPoint) =>
+            this.game.correctWords.has(answerCharPoint)
+              ? displaySupportedUnicode(answerCharPoint)
               : "\\_" // be careful of discord's markdown.
         )
         .join(""),
       fields: [
         {
           name: "words",
-          value: this.game.words
-            .map((unicode) => String.fromCharCode(...unicode))
+          value: Array.from(this.game.words)
+            .map(
+              (wordCharPoint) =>
+                "`" + displaySupportedUnicode(wordCharPoint) + "`"
+            )
             .join(", "),
           inline: true,
         },

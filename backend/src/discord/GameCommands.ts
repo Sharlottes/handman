@@ -1,6 +1,7 @@
-import GameManager from "@/core/GameManager";
 import { ApplicationCommandOptionType } from "discord.js";
 import { Discord, Slash, SlashOption } from "discordx";
+import GameManager from "@/core/GameManager";
+
 import GameEmbedManager from "./GameEmbedManager";
 
 @Discord()
@@ -79,6 +80,10 @@ abstract class GameCommands {
       content: `"${word}" is ${found ? "correct" : "incorrect"}!`,
       ephemeral: true,
     });
-    GameEmbedManager.gameEmbeds[gameId].send();
+    await GameEmbedManager.gameEmbeds[gameId].send();
+    const isGameEnd = game.isGameEnd();
+    if (isGameEnd !== undefined) {
+      GameManager.endGame(game.id, isGameEnd == "win");
+    }
   }
 }
