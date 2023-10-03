@@ -26,7 +26,7 @@ export default function Game() {
     socket.emit("join", gameId, (game: WebsocketGamePayload) => setGame(game));
     socket.on(
       "WORD_TRIED",
-      (word: string, isSuccessed: boolean, game: WebsocketGamePayload) => {
+      (_: string, isSuccessed: boolean, game: WebsocketGamePayload) => {
         if (successedRef.current) clearTimeout(successedRef.current);
 
         setGame(game);

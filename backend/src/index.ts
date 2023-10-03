@@ -1,5 +1,5 @@
-import "@/socketio";
-import "@/discord";
+import "./socketio";
+import "./discord";
 
 process
   .on("unhandledRejection", async (err) => {
