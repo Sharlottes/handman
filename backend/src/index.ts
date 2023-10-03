@@ -1,5 +1,6 @@
 import "./socketio";
 import "./discord";
+import { createServer } from "node:http";
 
 process
   .on("unhandledRejection", async (err) => {
@@ -20,3 +21,9 @@ process
       err
     );
   });
+
+export const healthCheck = createServer((request, response) => {
+  response.writeHead(200, { "Content-Type": "text/plain" });
+  response.write("OK");
+  response.end();
+});
