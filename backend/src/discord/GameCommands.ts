@@ -86,4 +86,15 @@ abstract class GameCommands {
       GameManager.endGame(game.id, isGameEnd == "win");
     }
   }
+
+  @Slash({
+    name: "list",
+    description: "get game list",
+  })
+  async getGameList(interaction: Discord.CommandInteraction) {
+    const gameIds = Object.keys(GameManager.games);
+    interaction.reply(
+      gameIds.map((id) => "* " + id + "\n").join("") || "cannot find any games"
+    );
+  }
 }

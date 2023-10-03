@@ -1,12 +1,11 @@
 import { GatewayIntentBits } from "discord.js";
-import { Client } from "discordx";
-import "@/discord/GameCommands";
-
 import { createServer } from "node:http";
 import { Server } from "socket.io";
+import { Client } from "discordx";
+import "@/discord/GameCommands";
 import express from "express";
-
 import dotenv from "dotenv";
+
 dotenv.config();
 
 const app = express();
