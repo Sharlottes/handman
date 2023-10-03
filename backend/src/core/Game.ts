@@ -16,9 +16,7 @@ export default class Game extends (EventEmitter as new () => TypedEmitter<Events
 
   correctWords: Set<number> = new Set();
   misCorrectWords: Set<number> = new Set();
-  users: User[] = [];
   life = 10;
-  gameEnd = false;
 
   constructor(
     readonly correctAnswer: string,
