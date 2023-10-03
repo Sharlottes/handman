@@ -68,22 +68,15 @@ abstract class GameCommands {
     }
     word = [...word][0];
 
-    let found = false;
     try {
-      found = game.try(word);
+      const found = game.try(word);
+      interaction.reply({
+        content: `"${word}" is ${found ? "correct" : "incorrect"}!`,
+        ephemeral: true,
+      });
     } catch (e: unknown) {
       interaction.reply({ content: "ERROR: " + e, ephemeral: true });
       return;
-    }
-
-    interaction.reply({
-      content: `"${word}" is ${found ? "correct" : "incorrect"}!`,
-      ephemeral: true,
-    });
-    await GameEmbedManager.gameEmbeds[gameId].send();
-    const isGameEnd = game.isGameEnd();
-    if (isGameEnd !== undefined) {
-      GameManager.endGame(game.id, isGameEnd == "win");
     }
   }
 

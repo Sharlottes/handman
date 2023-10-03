@@ -19,6 +19,9 @@ class GameEmbed {
     readonly channel: Discord.TextBasedChannel
   ) {
     this.updateEmbed();
+    game.on("WORD_TRIED", () => {
+      GameEmbedManager.gameEmbeds[game.id].send();
+    });
   }
 
   async send() {
@@ -68,7 +71,7 @@ class GameEmbed {
   }
 }
 
-class GameEmbedManager {
+class GameEmbedManagerClass {
   gameEmbeds: Record<string, GameEmbed> = {};
 
   createGameEmbed(game: Game, channel: Discord.TextBasedChannel) {
@@ -90,4 +93,5 @@ class GameEmbedManager {
   }
 }
 
-export default new GameEmbedManager();
+const GameEmbedManager = new GameEmbedManagerClass();
+export default GameEmbedManager;
