@@ -1,8 +1,10 @@
 import { GatewayIntentBits } from "discord.js";
 import { Client } from "discordx";
 import "@/discord/GameCommands";
+import dotenv from "dotenv";
+dotenv.config();
 
-const client = new Client({
+export const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
@@ -19,6 +21,7 @@ client
     console.log(
       `Discord bot has been logged in as ${client.user?.tag}(${client.application?.id})`
     );
+    await client.clearApplicationCommands();
     await client.initApplicationCommands();
   })
   .on("interactionCreate", (interaction) => {

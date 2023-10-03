@@ -1,8 +1,5 @@
-import dotenv from "dotenv";
 import "@/socketio";
 import "@/discord";
-
-dotenv.config();
 
 process
   .on("unhandledRejection", async (err) => {

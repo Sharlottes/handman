@@ -1,6 +1,9 @@
 import { displaySupportedUnicode } from "@/utils/displaySupportedUnicode";
-import { EmbedBuilder, AttachmentBuilder } from "discord.js";
+import { EmbedBuilder, AttachmentBuilder, ChannelType } from "discord.js";
+import GameManager from "@/core/GameManager";
 import Game from "@/core/Game";
+
+import { client } from ".";
 
 // Game state를 embed에 render하기 위한 매니저
 
@@ -15,7 +18,7 @@ class GameEmbed {
 
   constructor(
     readonly game: Game,
-    readonly channel: Discord.TextBasedChannel
+    readonly channel: Discord.ThreadChannel
   ) {
     this.updateEmbed();
     game.on("WORD_TRIED", (word, found) => {
@@ -78,7 +81,19 @@ class GameEmbed {
 class GameEmbedManagerClass {
   public gameEmbeds: Record<string, GameEmbed> = {};
 
-  public createGameEmbed(game: Game, channel: Discord.TextBasedChannel) {
+  async onGameStarted(gameId: string) {
+    const channel = client.guilds.cache
+      .get(process.env.TEST_GUILD_ID)
+      ?.channels.cache.get(process.env.TEST_CHANNEL_ID);
+    if (channel?.type != ChannelType.GuildText) return;
+    const threadChannel = await channel.threads.create({
+      name: "Hangman Thread - " + gameId,
+    });
+
+    this.createGameEmbed(GameManager.games[gameId], threadChannel);
+  }
+
+  public createGameEmbed(game: Game, channel: Discord.ThreadChannel) {
     const gameEmbed = new GameEmbed(game, channel);
     this.gameEmbeds[game.id] = gameEmbed;
     game.once("GAME_ENDED", async (isWin) => {
@@ -87,9 +102,10 @@ class GameEmbedManagerClass {
           isWin ? "You win!" : "lose!"
         }\nThe embed will be removed after 5 seconds`,
       });
-      setTimeout(() => {
+      setTimeout(async () => {
         gameEmbed.message?.delete();
-        message.delete();
+        await message.delete();
+        channel.delete();
       }, 5 * 1000);
       delete this.gameEmbeds[game.id];
     });

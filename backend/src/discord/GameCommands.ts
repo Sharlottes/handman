@@ -28,16 +28,7 @@ abstract class GameCommands {
     interaction: Discord.CommandInteraction
   ) {
     const game = GameManager.startGame(correctAnswer, wordAmount);
-    const gameManager = GameEmbedManager.createGameEmbed(
-      game,
-      interaction.channel!
-    );
-
-    await interaction.deferReply();
-    await gameManager.send();
-    await interaction.editReply(
-      `the game successfully created. id: ${game.id}`
-    );
+    interaction.reply(`the game successfully created. id: ${game.id}`);
   }
 
   @Slash({
