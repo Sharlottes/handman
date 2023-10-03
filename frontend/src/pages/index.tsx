@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import "./index.css";
 
 function App() {
-  const [gameIds, setGameIds] = useState<string[]>([]);
+  const [gameIds, setGameIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch(
@@ -15,10 +15,10 @@ function App() {
     )
       .then((res) => res.json())
       .catch(() => ({ gameIds: [] }))
-      .then(({ gameIds }) => setGameIds(gameIds));
+      .then(({ gameIds }) => setGameIds(new Set(gameIds)));
 
     socket.on("GAME_STARTED", (gameId) => {
-      setGameIds((prev) => [...prev, gameId]);
+      setGameIds((prev) => new Set([...prev, gameId]));
     });
   }, []);
 
@@ -27,7 +27,7 @@ function App() {
       <h1 className="title">games</h1>
       <hr />
       <div className="game-items-container">
-        {gameIds.map((id) => (
+        {Array.from(gameIds).map((id) => (
           <a key={id} className="game-item" href={`/game?id=${id}`}>
             {id}
           </a>

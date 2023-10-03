@@ -31,11 +31,10 @@ io.on("connection", (socket) => {
     game.once("GAME_ENDED", (isWin) => {
       socket.emit("GAME_ENDED", isWin, game);
     });
-
-    // for real-time game list updating
-    GameManager.on("GAME_STARTED", (gameId) => {
-      socket.emit("GAME_STARTED", gameId);
-    });
+  });
+  // for real-time game list updating
+  GameManager.on("GAME_STARTED", (gameId) => {
+    socket.emit("GAME_STARTED", gameId);
   });
   socket.on("disconnect", () => {
     console.log("user disconnected");
