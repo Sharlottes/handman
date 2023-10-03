@@ -1,5 +1,6 @@
 import { socket } from "../lib/socket";
 import { useEffect, useState } from "react";
+import "./index.css";
 
 function App() {
   const [gameIds, setGameIds] = useState<string[]>([]);
@@ -22,18 +23,17 @@ function App() {
   }, []);
 
   return (
-    <main>
-      Hello World!
-      <div>
-        <p>games</p>
-        <hr />
-        <ul>
-          {gameIds.map((id) => (
-            <li key={id}>{id}</li>
-          ))}
-        </ul>
+    <div>
+      <h1 className="title">games</h1>
+      <hr />
+      <div className="game-items-container">
+        {gameIds.map((id) => (
+          <a key={id} className="game-item" href={`/game?id=${id}`}>
+            {id}
+          </a>
+        ))}
       </div>
-    </main>
+    </div>
   );
 }
 
