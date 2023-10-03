@@ -4,10 +4,9 @@ import { shuffle } from "@/utils/shuffle";
 import EventEmitter from "events";
 import crypto from "crypto";
 
-import GameManager from "./GameManager";
-
 type EventsMap = {
-  WORD_TRIED: (isCorrect: boolean) => void;
+  WORD_TRIED: (word: string, isCorrect: boolean) => void;
+  GAME_ENDED: (isWin: boolean) => void;
 };
 
 export default class Game extends (EventEmitter as new () => TypedEmitter<EventsMap>) {
@@ -72,11 +71,11 @@ export default class Game extends (EventEmitter as new () => TypedEmitter<Events
       this.life--;
       this.misCorrectWords.add(charPoint);
     }
-    this.emit("WORD_TRIED", isFound);
+    this.emit("WORD_TRIED", char, isFound);
 
     const isGameEnd = this.isGameEnd();
     if (isGameEnd !== undefined) {
-      GameManager.endGame(this.id, isGameEnd == "win");
+      this.emit("GAME_ENDED", isGameEnd == "win");
     }
     return isFound;
   }

@@ -1,6 +1,5 @@
 import { displaySupportedUnicode } from "@/utils/displaySupportedUnicode";
 import { EmbedBuilder, AttachmentBuilder } from "discord.js";
-import GameManager from "@/core/GameManager";
 import Game from "@/core/Game";
 
 // Game state를 embed에 render하기 위한 매니저
@@ -19,8 +18,13 @@ class GameEmbed {
     readonly channel: Discord.TextBasedChannel
   ) {
     this.updateEmbed();
-    game.on("WORD_TRIED", () => {
+    game.on("WORD_TRIED", (word, found) => {
       GameEmbedManager.gameEmbeds[game.id].send();
+      channel.send({
+        content: `someone tried "${word}", and that was ${
+          found ? "correct" : "incorrect"
+        }!`,
+      });
     });
   }
 
@@ -72,12 +76,12 @@ class GameEmbed {
 }
 
 class GameEmbedManagerClass {
-  gameEmbeds: Record<string, GameEmbed> = {};
+  public gameEmbeds: Record<string, GameEmbed> = {};
 
-  createGameEmbed(game: Game, channel: Discord.TextBasedChannel) {
+  public createGameEmbed(game: Game, channel: Discord.TextBasedChannel) {
     const gameEmbed = new GameEmbed(game, channel);
     this.gameEmbeds[game.id] = gameEmbed;
-    GameManager.once("GAME_ENDED", async (id, isWin) => {
+    game.once("GAME_ENDED", async (isWin) => {
       const message = await channel.send({
         content: `Game End - ${
           isWin ? "You win!" : "lose!"
@@ -87,7 +91,7 @@ class GameEmbedManagerClass {
         gameEmbed.message?.delete();
         message.delete();
       }, 5 * 1000);
-      delete this.gameEmbeds[id];
+      delete this.gameEmbeds[game.id];
     });
     return gameEmbed;
   }

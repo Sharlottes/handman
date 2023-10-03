@@ -5,19 +5,38 @@ import { Client } from "discordx";
 import "@/discord/GameCommands";
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
+
+import GameManager from "./core/GameManager";
 
 dotenv.config();
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
+const io = new Server(server, { cors: { origin: "*" } });
 
-// TODO: impl API
-app.get("/", (req, res) => {});
+app.use(cors());
+// for getting game list initially
+app.get("/list", (_, res) => {
+  res.json({ gameIds: Object.keys(GameManager.games) });
+});
 
-// TODO: impl Socket.io
 io.on("connection", (socket) => {
   console.log("a user connected");
+  socket.on("join", (gameId) => {
+    const game = GameManager.games[gameId];
+    game.on("WORD_TRIED", (word, isSuccessed) => {
+      socket.emit("WORD_TRIED", word, isSuccessed, game);
+    });
+    game.once("GAME_ENDED", (isWin) => {
+      socket.emit("GAME_ENDED", isWin, game);
+    });
+
+    // for real-time game list updating
+    GameManager.on("GAME_STARTED", (gameId) => {
+      socket.emit("GAME_STARTED", gameId);
+    });
+  });
   socket.on("disconnect", () => {
     console.log("user disconnected");
   });
@@ -27,7 +46,6 @@ server.listen(3000, () => {
   console.log("server running at http://localhost:3000");
 });
 
-// TODO: impl Discord.js commands
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,

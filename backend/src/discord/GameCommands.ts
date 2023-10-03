@@ -71,7 +71,9 @@ abstract class GameCommands {
     try {
       const found = game.try(word);
       interaction.reply({
-        content: `"${word}" is ${found ? "correct" : "incorrect"}!`,
+        content: `someone tried "${word}", and that was ${
+          found ? "correct" : "incorrect"
+        }!`,
         ephemeral: true,
       });
     } catch (e: unknown) {
