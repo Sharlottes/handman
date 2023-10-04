@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { displaySupportedUnicode } from "../../utils/displaySupportedUnicode";
 import "./game.css";
+import { getRootDomain } from "../../utils/getRootDomain";
 
 interface WebsocketGamePayload {
   words: number[];
@@ -60,7 +61,7 @@ export default function Game() {
       <div className="image-container">
         <img
           alt={`hangman-${10 - game.life}`}
-          src={`/images/${10 - game.life}.jpg`}
+          src={`${getRootDomain(true)}/images/${10 - game.life}.jpg`}
         />
         <p>life: {game.life}</p>
       </div>

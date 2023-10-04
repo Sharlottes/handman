@@ -3,19 +3,14 @@ import { socket } from "../../lib/socket";
 import { useEffect, useState } from "react";
 import "./index.css";
 import { useNavigate } from "react-router-dom";
+import { getRootDomain } from "../../utils/getRootDomain";
 
 function App() {
   const [gameIds, setGameIds] = useState<Set<string>>(new Set());
   const navigator = useNavigate();
 
   useEffect(() => {
-    fetch(
-      `${
-        process.env.NODE_ENV === "production"
-          ? "https://hangman-sharlottes.koyeb.app"
-          : "http://localhost:8000"
-      }/list`
-    )
+    fetch(`${getRootDomain()}/list`)
       .then((res) => res.json())
       .catch(() => ({ gameIds: [] }))
       .then(({ gameIds }) => setGameIds(new Set(gameIds)));
