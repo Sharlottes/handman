@@ -1,7 +1,7 @@
-import { socket } from "../lib/socket";
+import { socket } from "../../lib/socket";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { displaySupportedUnicode } from "../utils/displaySupportedUnicode";
+import { displaySupportedUnicode } from "../../utils/displaySupportedUnicode";
 import "./game.css";
 
 interface WebsocketGamePayload {

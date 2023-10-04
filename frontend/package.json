@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "type": "module",
+  "homepage": "https://sharlottes.github.io/handman",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

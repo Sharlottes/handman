@@ -1,5 +1,5 @@
 import Swal from "sweetalert2";
-import { socket } from "../lib/socket";
+import { socket } from "../../lib/socket";
 import { useEffect, useState } from "react";
 import "./index.css";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ function App() {
     fetch(
       `${
         process.env.NODE_ENV === "production"
-          ? process.env.API_ENDPOINT
+          ? "https://hangman-sharlottes.koyeb.app"
           : "http://localhost:3000"
       }/list`
     )
