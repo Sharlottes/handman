@@ -15,6 +15,11 @@ header > h3 {
   padding: 8px 16px;
   border-radius: 8px;
   background-color: color-mix(in srgb, orange 50%, oldlace 50%);
+  cursor: pointer;
+  transition: opacity 300ms;
+}
+.newgame-button:hover {
+  opacity: 0.75;
 }
 
 .game-items-container {
