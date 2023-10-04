@@ -39,7 +39,7 @@ export default function Game() {
     );
     socket.on("GAME_ENDED", (isWin: boolean, game: WebsocketGamePayload) => {
       setGame(game);
-      navigate(`/gameEnd?isWin=${isWin ? "win" : "lose"}`);
+      navigate(`/handman/gameEnd?isWin=${isWin ? "win" : "lose"}`);
     });
   }, []);
 

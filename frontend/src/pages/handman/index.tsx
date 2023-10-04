@@ -13,7 +13,7 @@ function App() {
       `${
         process.env.NODE_ENV === "production"
           ? "https://hangman-sharlottes.koyeb.app"
-          : "http://localhost:3000"
+          : "http://localhost:8000"
       }/list`
     )
       .then((res) => res.json())
@@ -52,7 +52,7 @@ function App() {
       formValues[0],
       formValues[1],
       (gameId: string) => {
-        navigator(`/game?id=${gameId}`);
+        navigator(`/handman/game?id=${gameId}`);
       }
     );
   };
@@ -69,7 +69,7 @@ function App() {
       <hr />
       <div className="game-items-container">
         {Array.from(gameIds).map((id) => (
-          <a key={id} className="game-item" href={`/game?id=${id}`}>
+          <a key={id} className="game-item" href={`/handman/game?id=${id}`}>
             {id}
           </a>
         ))}

@@ -15,7 +15,9 @@ app.use(cors());
 app.get("/list", (_, res) => {
   res.json({ gameIds: Object.keys(GameManager.games) });
 });
-
+app.get("/", (_, res) => {
+  res.status(200).setHeader("Content-Type", "text/plain").send("OK");
+});
 io.on("connection", (socket) => {
   console.log("a user connected");
   socket.on("join", (gameId, callback) => {
@@ -68,11 +70,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.on("request", (request, response) => {
-  response.writeHead(200, { "Content-Type": "text/plain" });
-  response.write("OK");
-  response.end();
-});
 server.listen(8000, () => {
   console.log("server running at http://localhost:8000");
 });
