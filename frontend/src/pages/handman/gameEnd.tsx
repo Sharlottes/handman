@@ -32,7 +32,7 @@ export default function GameEnd() {
   return (
     <div className="page-container">
       <h1>you {isWin ? "Win!" : "lose..."}</h1>
-      <a href="/">back to main</a>
+      <a href="/handman">back to main</a>
     </div>
   );
 }
