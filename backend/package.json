@@ -1,6 +1,7 @@
 {
   "name": "hangman",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "yarn build && yarn start",
     "start": "node --es-module-specifier-resolution=node output/index.js",
