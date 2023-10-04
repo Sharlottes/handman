@@ -68,6 +68,11 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("server running at http://localhost:3000");
+server.on("request", (request, response) => {
+  response.writeHead(200, { "Content-Type": "text/plain" });
+  response.write("OK");
+  response.end();
+});
+server.listen(8000, () => {
+  console.log("server running at http://localhost:8000");
 });

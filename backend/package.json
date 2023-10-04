@@ -29,5 +29,8 @@
     "prettier": "^3.0.3",
     "typed-emitter": "^2.1.0",
     "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": "18"
   }
 }

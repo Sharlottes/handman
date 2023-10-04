@@ -90,7 +90,7 @@ class GameEmbedManagerClass {
       name: "Hangman Thread - " + gameId,
     });
 
-    this.createGameEmbed(GameManager.games[gameId], threadChannel);
+    this.createGameEmbed(GameManager.games[gameId], threadChannel).send();
   }
 
   public createGameEmbed(game: Game, channel: Discord.ThreadChannel) {
