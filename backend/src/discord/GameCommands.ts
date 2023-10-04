@@ -37,13 +37,6 @@ abstract class GameCommands {
   })
   async tryWord(
     @SlashOption({
-      name: "game-id",
-      description: "the id of game where you are playing rn",
-      type: ApplicationCommandOptionType.String,
-      required: true,
-    })
-    gameId: string,
-    @SlashOption({
       name: "word",
       description: "the word you try",
       type: ApplicationCommandOptionType.String,
@@ -52,9 +45,16 @@ abstract class GameCommands {
     word: string,
     interaction: Discord.CommandInteraction
   ) {
+    if (!interaction.channel?.isThread()) {
+      interaction.reply(
+        "Error: the command is invalid outside of the thread channel."
+      );
+      return;
+    }
+    const gameId = interaction.channel.name.split(" - ")[1];
     const game = GameManager.games[gameId];
     if (!game) {
-      interaction.reply("that game is not found.");
+      interaction.reply("Error: this game is not found.");
       return;
     }
     word = /\d/g.test(word) ? String.fromCodePoint(+word) : [...word][0];
