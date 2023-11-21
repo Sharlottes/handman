@@ -1,8 +1,9 @@
 # handman
-Disocrd &lt;-> Website cross platform Unicode-hangman multiplay game.
+**Discord** &lt;-> **Website** &lt;-> **Arduino** cross platform multiplay Unicode hangman game.
 
 ## How to play
 
-Enter webpage or discord server
-https://sharlottes.github.io/handman/
-https://discord.gg/sXdFHFcMhZ
+Enter the [Webpage](https://sharlottes.github.io/handman/) or [Discord server](https://discord.gg/sXdFHFcMhZ)
+
+## Struct
+![행맨 구조도 drawio (1)](https://github.com/Sharlottes/handman/assets/60801210/dad0dc39-4298-4c94-8d78-5305bddcafee)
