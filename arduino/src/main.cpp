@@ -18,12 +18,13 @@
 #define ARROW_LEFT_BUTTON_PIN 7
 #define ARROW_SELECT_BUTTON_PIN 18
 
-void updateLCD(int selectUnit);
-void fetchRoomList();
-JsonArray getRoomList();
+void fetchroomDisplayList();
+JsonArray getroomDisplayList();
 char* stringToChar(String str);
+void handleRoomIdSelected(int idx);
 void showItemSelection(Vector<String> items);
 String httpGETRequest(const char* serverName);
+void updateLCD(int selectUnit, std::function<void(int)> onSelected);
 bool asyncDelay(unsigned long* lastMilliPtr, unsigned long delayMS);
 void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length);
 
@@ -37,7 +38,8 @@ bool isProjectReady = false;
 unsigned long fetchLastTime = 0;
 unsigned long buttonInputTime = 0;
 
-Vector<String> lcdItemList;
+Vector<String> roomList;
+Vector<String> roomDisplayList;
 
 void setup() {
   // Serial setting
@@ -74,9 +76,31 @@ void setup() {
 void loop() {
   socketIO.loop();
   if(isProjectReady) {
-    fetchRoomList();
-    updateLCD(4);
+    fetchroomDisplayList();
+    updateLCD(4, handleRoomIdSelected);
   }
+}
+
+void handleRoomIdSelected(int idx) {
+  if(idx >= roomList.size()) {
+    Serial.printf("[ERROR] index out of array size in handleRoomIdSelected(int idx)");
+    return;
+  }
+
+  Serial.printf(stringToChar(roomList[idx]));
+
+  // creat JSON message for Socket.IO (event)
+  DynamicJsonDocument doc(1024);
+  JsonArray array = doc.to<JsonArray>();
+
+  // add event payload
+  array.add("join");
+  array.createNestedObject()["gameId"] = stringToChar(roomList[idx]);
+
+  // serialize and send
+  String output;
+  serializeJson(doc, output);
+  socketIO.sendEVENT(output);
 }
 
 char* stringToChar(String str) {
@@ -86,28 +110,33 @@ char* stringToChar(String str) {
     return buf;
 }
 
-void fetchRoomList() {
+void fetchroomDisplayList() {
   if(!asyncDelay(&fetchLastTime, 5000)) return;
 
-  JsonArray roomIds = getRoomList();
+  JsonArray roomIds = getroomDisplayList();
   size_t size = roomIds.size();
-  String* storage = new String[size];
-  lcdItemList.setStorage(storage, size, 0);
+  
+  String* roomStorage = new String[size];
+  roomList.setStorage(roomStorage, size, 0);
+
+  String* roomDisplayStorage = new String[size];
+  roomDisplayList.setStorage(roomDisplayStorage, size, 0);
 
   for (unsigned i = 0; i < roomIds.size(); i++) {
     JsonVariant roomId = roomIds[i];
     String roomidStr = roomId.as<String>();
-    lcdItemList.push_back(roomidStr.substring(0, 3) + (i != roomIds.size() - 1 ? "," : ""));
-    Serial.printf(stringToChar(lcdItemList.back()));
+    roomList.push_back(roomidStr);
+    roomDisplayList.push_back(roomidStr.substring(0, 3) + (i != roomIds.size() - 1 ? "," : ""));
+    Serial.printf(stringToChar(roomDisplayList.back()));
   }
   lcd.clear();
 
-  showItemSelection(lcdItemList);
+  showItemSelection(roomDisplayList);
 
   fetchLastTime = millis();
 }
 
-JsonArray getRoomList() {
+JsonArray getroomDisplayList() {
   String sensorReadings;
   
   sensorReadings = httpGETRequest(stringToChar("http://"+String(SERVER_HOST)+":"+String(SERVER_PORT)+"/list"));
@@ -228,7 +257,7 @@ void showItemSelection(Vector<String> items) {
 }
 
 int cursorX = 0, cursorY = 0;
-void updateLCD(int selectUnit) {
+void updateLCD(int selectUnit, std::function<void(int)> onSelected) {
   lcd.cursor();
   for(unsigned int i = 0; i < selectUnit; i++) {
     lcd.setCursor(cursorX + i, cursorY);
@@ -259,6 +288,9 @@ void updateLCD(int selectUnit) {
   }  
   if(digitalRead(ARROW_SELECT_BUTTON_PIN) == HIGH) {
     Serial.println("select button!");
+    int idx = (cursorX + 16 * cursorY) / 4;
+    onSelected(idx);
+
     pressed = true;
   }
   if(pressed) {
