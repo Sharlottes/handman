@@ -38,6 +38,7 @@ bool isProjectReady = false;
 unsigned long fetchLastTime = 0;
 unsigned long buttonInputTime = 0;
 
+JsonVariant gameState;
 Vector<String> roomList;
 Vector<String> roomDisplayList;
 
@@ -45,6 +46,13 @@ void setup() {
   // Serial setting
   Serial.begin(115200);
   Serial.setDebugOutput(true);
+
+  // Pin mode Setting
+  pinMode(ARROW_UP_BUTTON_PIN, INPUT); 
+  pinMode(ARROW_RIGHT_BUTTON_PIN, INPUT); 
+  pinMode(ARROW_DOWN_BUTTON_PIN, INPUT); 
+  pinMode(ARROW_LEFT_BUTTON_PIN, INPUT); 
+  pinMode(ARROW_SELECT_BUTTON_PIN, INPUT); 
 
   // LCD Setting
   lcd.init();
@@ -65,12 +73,6 @@ void setup() {
   Serial.printf("[SETUP] Websocket Connecting...\n");
   socketIO.begin(SERVER_HOST, SERVER_PORT, "/socket.io/?EIO=4", IS_SERVER_SECURED ? "wss" : "ws");
   socketIO.onEvent(socketIOEvent);
-
-  pinMode(ARROW_UP_BUTTON_PIN, INPUT); 
-  pinMode(ARROW_RIGHT_BUTTON_PIN, INPUT); 
-  pinMode(ARROW_DOWN_BUTTON_PIN, INPUT); 
-  pinMode(ARROW_LEFT_BUTTON_PIN, INPUT); 
-  pinMode(ARROW_SELECT_BUTTON_PIN, INPUT); 
 }
 
 void loop() {
@@ -78,6 +80,33 @@ void loop() {
   if(isProjectReady) {
     fetchRoomDisplayList();
     updateLCD(4, handleRoomIdSelected);
+  }
+}
+
+int cursorX = 0, cursorY = 0;
+void updateLCD(int selectUnit, std::function<void(int)> onSelected) {
+  lcd.cursor();
+  for(unsigned int i = 0; i < selectUnit; i++) {
+    lcd.setCursor(cursorX + i, cursorY);
+  }
+  if(!asyncDelay(&buttonInputTime, 200)) return;
+  
+  bool pressed = false;
+  if(digitalRead(ARROW_UP_BUTTON_PIN) == HIGH) {
+    cursorY = (cursorY + 1) % 2;
+  }  
+  if(digitalRead(ARROW_DOWN_BUTTON_PIN) == HIGH) {
+    cursorY = cursorY - 1 < 0 ? 1 : cursorY - 1;
+  }  
+  if(digitalRead(ARROW_LEFT_BUTTON_PIN) == HIGH) {
+    cursorX = cursorX - selectUnit < 0 ? 16 - selectUnit : cursorX - selectUnit;
+  }  
+  if(digitalRead(ARROW_RIGHT_BUTTON_PIN) == HIGH) {
+    cursorX = (cursorX + selectUnit) % 16;
+  }  
+  if(digitalRead(ARROW_SELECT_BUTTON_PIN) == HIGH) {
+    int idx = (cursorX + 16 * cursorY) / 4;
+    onSelected(idx);
   }
 }
 
@@ -93,7 +122,7 @@ void handleRoomIdSelected(int idx) {
 
   // add event payload
   array.add("join");
-  array.createNestedObject()["gameId"] = stringToChar(roomList[idx]);
+  array.add(stringToChar(roomList[idx]));
 
   // serialize and send
   String output;
@@ -101,11 +130,26 @@ void handleRoomIdSelected(int idx) {
   socketIO.sendEVENT(output);
 }
 
-char* stringToChar(String str) {
-    unsigned int len = str.length() + 1;
-    char* buf = new char[len];
-    str.toCharArray(buf, len);
-    return buf;
+void handleSocketEvent(String eventName, DynamicJsonDocument doc) {
+  if(eventName == "GAME_STARTED") {
+    fetchLastTime = millis() - 5000;
+    Serial.println("[GAME] game started.");
+  } else if(eventName == "USER_JOINED") {
+    gameState = doc[1];
+    Serial.println("[GAME] user joined.");
+  }
+}
+
+void showItemSelection(Vector<String> items) {
+  //render words
+  for (unsigned i = 0; i < items.size(); i++) {
+    lcd.printf(stringToChar(items[i]));
+
+    if(i != 0 && (i + 1) % 4 == 0) 
+    {
+      lcd.setCursor(0, 1);
+    }
+  }
 }
 
 void fetchRoomDisplayList() {
@@ -144,6 +188,8 @@ JsonArray getroomDisplayList() {
   return doc["gameIds"].as<JsonArray>();
 }
 
+#pragma region Core
+
 String httpGETRequest(const char* serverName) {
   WiFiClient client;
   HTTPClient http;
@@ -155,12 +201,12 @@ String httpGETRequest(const char* serverName) {
   
   String payload = "{}"; 
   if (httpResponseCode > 0) {
-    Serial.print("HTTP Response code: ");
+    Serial.print("[HTTP] Response code: ");
     Serial.println(httpResponseCode);
     payload = http.getString();
   }
   else {
-    Serial.print("Error code: ");
+    Serial.print("[HTTP] Error code: ");
     Serial.println(httpResponseCode);
   }
 
@@ -202,6 +248,8 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
       String eventName = doc[0];
       Serial.printf("[IOc] event name: %s\n", eventName.c_str());
 
+      handleSocketEvent(eventName, doc);
+
       // Message Includes a ID for a ACK (callback)
       if(id) {
         // creat JSON message for Socket.IO (ack)
@@ -237,53 +285,15 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
   }
 }
 
-void showItemSelection(Vector<String> items) {
-  //render words
-  for (unsigned i = 0; i < items.size(); i++) {
-    lcd.printf(stringToChar(items[i]));
+#pragma endregion Core
 
-    if(i != 0 && (i + 1) % 4 == 0) 
-    {
-      lcd.setCursor(0, 1);
-    }
-  }
-}
+#pragma region Utilities
 
-int cursorX = 0, cursorY = 0;
-void updateLCD(int selectUnit, std::function<void(int)> onSelected) {
-  lcd.cursor();
-  for(unsigned int i = 0; i < selectUnit; i++) {
-    lcd.setCursor(cursorX + i, cursorY);
-  }
-  if(!asyncDelay(&buttonInputTime, 200)) return;
-  
-  bool pressed = false;
-  if(digitalRead(ARROW_UP_BUTTON_PIN) == HIGH) {
-    cursorY = (cursorY + 1) % 2;
-    pressed = true;
-  }  
-  if(digitalRead(ARROW_DOWN_BUTTON_PIN) == HIGH) {
-    cursorY = cursorY - 1 < 0 ? 1 : cursorY - 1;
-    pressed = true;
-  }  
-  if(digitalRead(ARROW_LEFT_BUTTON_PIN) == HIGH) {
-    cursorX = cursorX - selectUnit < 0 ? 16 - selectUnit : cursorX - selectUnit;
-    pressed = true;
-
-  }  
-  if(digitalRead(ARROW_RIGHT_BUTTON_PIN) == HIGH) {
-    cursorX = (cursorX + selectUnit) % 16;
-    pressed = true;
-  }  
-  if(digitalRead(ARROW_SELECT_BUTTON_PIN) == HIGH) {
-    int idx = (cursorX + 16 * cursorY) / 4;
-    onSelected(idx);
-
-    pressed = true;
-  }
-  if(pressed) {
-    buttonInputTime = millis();
-  }
+char* stringToChar(String str) {
+    unsigned int len = str.length() + 1;
+    char* buf = new char[len];
+    str.toCharArray(buf, len);
+    return buf;
 }
 
 bool asyncDelay(unsigned long* lastMilliPtr, unsigned long delayMS) {
@@ -295,3 +305,5 @@ bool asyncDelay(unsigned long* lastMilliPtr, unsigned long delayMS) {
     return false;
   };
 }
+
+#pragma endregion Utilities

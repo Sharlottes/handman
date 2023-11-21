@@ -11,8 +11,10 @@ io.on("connection", (socket) => {
   socket.on("join", (gameId, callback) => {
     console.log("a user joined to", gameId);
     const game = GameManager.games[gameId];
-    if (!game) return;
-
+    if (!game) {
+      console.warn("[WARN] the game is not found!");
+      return;
+    }
     const getGamePayload = (): WebsocketGamePayload => ({
       words: Array.from(game.words),
       correctWords: Array.from(game.correctWords),
@@ -24,7 +26,11 @@ io.on("connection", (socket) => {
         )
         .join(""),
     });
-    callback(getGamePayload());
+
+    // arduino dosen't support acknowledged callback
+    callback?.(getGamePayload());
+    socket.emit("USER_JOINED", gameId, getGamePayload());
+
     game.on("WORD_TRIED", (word, isSuccessed) => {
       socket.emit("WORD_TRIED", word, isSuccessed, getGamePayload());
     });
