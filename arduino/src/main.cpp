@@ -18,7 +18,7 @@
 #define ARROW_LEFT_BUTTON_PIN 7
 #define ARROW_SELECT_BUTTON_PIN 18
 
-void fetchroomDisplayList();
+void fetchRoomDisplayList();
 JsonArray getroomDisplayList();
 char* stringToChar(String str);
 void handleRoomIdSelected(int idx);
@@ -76,7 +76,7 @@ void setup() {
 void loop() {
   socketIO.loop();
   if(isProjectReady) {
-    fetchroomDisplayList();
+    fetchRoomDisplayList();
     updateLCD(4, handleRoomIdSelected);
   }
 }
@@ -86,8 +86,6 @@ void handleRoomIdSelected(int idx) {
     Serial.printf("[ERROR] index out of array size in handleRoomIdSelected(int idx)");
     return;
   }
-
-  Serial.printf(stringToChar(roomList[idx]));
 
   // creat JSON message for Socket.IO (event)
   DynamicJsonDocument doc(1024);
@@ -110,7 +108,7 @@ char* stringToChar(String str) {
     return buf;
 }
 
-void fetchroomDisplayList() {
+void fetchRoomDisplayList() {
   if(!asyncDelay(&fetchLastTime, 5000)) return;
 
   JsonArray roomIds = getroomDisplayList();
@@ -127,20 +125,14 @@ void fetchroomDisplayList() {
     String roomidStr = roomId.as<String>();
     roomList.push_back(roomidStr);
     roomDisplayList.push_back(roomidStr.substring(0, 3) + (i != roomIds.size() - 1 ? "," : ""));
-    Serial.printf(stringToChar(roomDisplayList.back()));
   }
   lcd.clear();
 
   showItemSelection(roomDisplayList);
-
-  fetchLastTime = millis();
 }
 
 JsonArray getroomDisplayList() {
-  String sensorReadings;
-  
-  sensorReadings = httpGETRequest(stringToChar("http://"+String(SERVER_HOST)+":"+String(SERVER_PORT)+"/list"));
-  Serial.println(sensorReadings);
+  String sensorReadings = httpGETRequest(stringToChar("http://"+String(SERVER_HOST)+":"+String(SERVER_PORT)+"/list"));
 
   DynamicJsonDocument doc(1024);
   DeserializationError error = deserializeJson(doc, stringToChar(sensorReadings));
@@ -148,6 +140,7 @@ JsonArray getroomDisplayList() {
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.c_str());
   }
+
   return doc["gameIds"].as<JsonArray>();
 }
 
@@ -266,28 +259,23 @@ void updateLCD(int selectUnit, std::function<void(int)> onSelected) {
   
   bool pressed = false;
   if(digitalRead(ARROW_UP_BUTTON_PIN) == HIGH) {
-    Serial.println("up button!");
     cursorY = (cursorY + 1) % 2;
     pressed = true;
   }  
   if(digitalRead(ARROW_DOWN_BUTTON_PIN) == HIGH) {
-    Serial.println("down button!");
     cursorY = cursorY - 1 < 0 ? 1 : cursorY - 1;
     pressed = true;
   }  
   if(digitalRead(ARROW_LEFT_BUTTON_PIN) == HIGH) {
-    Serial.println("left button!");
     cursorX = cursorX - selectUnit < 0 ? 16 - selectUnit : cursorX - selectUnit;
     pressed = true;
 
   }  
   if(digitalRead(ARROW_RIGHT_BUTTON_PIN) == HIGH) {
-    Serial.println("right button!");
     cursorX = (cursorX + selectUnit) % 16;
     pressed = true;
   }  
   if(digitalRead(ARROW_SELECT_BUTTON_PIN) == HIGH) {
-    Serial.println("select button!");
     int idx = (cursorX + 16 * cursorY) / 4;
     onSelected(idx);
 
