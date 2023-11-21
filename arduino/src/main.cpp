@@ -8,19 +8,36 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
+#include <Vector.h>
+
 #include "secret.h"
 
-void startGame();
+#define ARROW_UP_BUTTON_PIN 4
+#define ARROW_RIGHT_BUTTON_PIN 5
+#define ARROW_DOWN_BUTTON_PIN 6
+#define ARROW_LEFT_BUTTON_PIN 7
+#define ARROW_SELECT_BUTTON_PIN 18
+
+void updateLCD(int selectUnit);
 void fetchRoomList();
 JsonArray getRoomList();
 char* stringToChar(String str);
+void showItemSelection(Vector<String> items);
 String httpGETRequest(const char* serverName);
+bool asyncDelay(unsigned long* lastMilliPtr, unsigned long delayMS);
 void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length);
 
 // Create instances
 WiFiMulti wiFiMulti;
 SocketIOclient socketIO;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// global var
+bool isProjectReady = false;
+unsigned long fetchLastTime = 0;
+unsigned long buttonInputTime = 0;
+
+Vector<String> lcdItemList;
 
 void setup() {
   // Serial setting
@@ -46,66 +63,63 @@ void setup() {
   Serial.printf("[SETUP] Websocket Connecting...\n");
   socketIO.begin(SERVER_HOST, SERVER_PORT, "/socket.io/?EIO=4", IS_SERVER_SECURED ? "wss" : "ws");
   socketIO.onEvent(socketIOEvent);
+
+  pinMode(ARROW_UP_BUTTON_PIN, INPUT); 
+  pinMode(ARROW_RIGHT_BUTTON_PIN, INPUT); 
+  pinMode(ARROW_DOWN_BUTTON_PIN, INPUT); 
+  pinMode(ARROW_LEFT_BUTTON_PIN, INPUT); 
+  pinMode(ARROW_SELECT_BUTTON_PIN, INPUT); 
 }
 
 void loop() {
   socketIO.loop();
-}
-
-void startGame() {
-  fetchRoomList();
+  if(isProjectReady) {
+    fetchRoomList();
+    updateLCD(4);
+  }
 }
 
 char* stringToChar(String str) {
-    int len = str.length() + 1;
+    unsigned int len = str.length() + 1;
     char* buf = new char[len];
     str.toCharArray(buf, len);
     return buf;
 }
 
-const unsigned long fetchTimerDelay = 5000;
-
 void fetchRoomList() {
-  unsigned long lastTime = 0;
-  while(true) {
-    if ((millis() - lastTime) <= fetchTimerDelay) continue;
-    lcd.clear();
+  if(!asyncDelay(&fetchLastTime, 5000)) return;
 
-    JsonArray roomIds = getRoomList();
-    int i = 0;
-    for(JsonVariant roomId : roomIds) {
-        Serial.println(stringToChar(roomId.as<String>()));
+  JsonArray roomIds = getRoomList();
+  size_t size = roomIds.size();
+  String* storage = new String[size];
+  lcdItemList.setStorage(storage, size, 0);
 
-        String roomidStr = roomId.as<String>();
-        String sub = roomidStr.substring(0, 3);
-        lcd.printf(stringToChar(sub + (i != roomIds.size() - 1 ? "," : "")));
-
-        if(i != 0 && (i+1) % 4 == 0) 
-        {
-          lcd.setCursor(0, 1);
-        }
-        i++;
-    }
- 
-    lastTime = millis();
+  for (unsigned i = 0; i < roomIds.size(); i++) {
+    JsonVariant roomId = roomIds[i];
+    String roomidStr = roomId.as<String>();
+    lcdItemList.push_back(roomidStr.substring(0, 3) + (i != roomIds.size() - 1 ? "," : ""));
+    Serial.printf(stringToChar(lcdItemList.back()));
   }
+  lcd.clear();
+
+  showItemSelection(lcdItemList);
+
+  fetchLastTime = millis();
 }
 
 JsonArray getRoomList() {
   String sensorReadings;
   
-  while(true) {
-    sensorReadings = httpGETRequest(stringToChar("http://"+String(SERVER_HOST)+":"+String(SERVER_PORT)+"/list"));
-    Serial.println(sensorReadings);
+  sensorReadings = httpGETRequest(stringToChar("http://"+String(SERVER_HOST)+":"+String(SERVER_PORT)+"/list"));
+  Serial.println(sensorReadings);
 
-    DynamicJsonDocument doc(1024);
-    DeserializationError error = deserializeJson(doc, stringToChar(sensorReadings));
-    if(error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.c_str());
-    }
-    return doc["gameIds"].as<JsonArray>();
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, stringToChar(sensorReadings));
+  if(error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.c_str());
   }
+  return doc["gameIds"].as<JsonArray>();
 }
 
 String httpGETRequest(const char* serverName) {
@@ -145,7 +159,7 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
 
       lcd.clear(); lcd.printf("Server connected"); lcd.setCursor(0, 1); lcd.printf("Welcome to Game!");
       delay(1500);
-      startGame();
+      isProjectReady = true;
       break;
     case sIOtype_EVENT:
     {
@@ -199,4 +213,65 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
       Serial.printf("[IOc] get binary ack: %u\n", length);
       break;
   }
+}
+
+void showItemSelection(Vector<String> items) {
+  //render words
+  for (unsigned i = 0; i < items.size(); i++) {
+    lcd.printf(stringToChar(items[i]));
+
+    if(i != 0 && (i + 1) % 4 == 0) 
+    {
+      lcd.setCursor(0, 1);
+    }
+  }
+}
+
+int cursorX = 0, cursorY = 0;
+void updateLCD(int selectUnit) {
+  lcd.cursor();
+  for(unsigned int i = 0; i < selectUnit; i++) {
+    lcd.setCursor(cursorX + i, cursorY);
+  }
+  if(!asyncDelay(&buttonInputTime, 200)) return;
+  
+  bool pressed = false;
+  if(digitalRead(ARROW_UP_BUTTON_PIN) == HIGH) {
+    Serial.println("up button!");
+    cursorY = (cursorY + 1) % 2;
+    pressed = true;
+  }  
+  if(digitalRead(ARROW_DOWN_BUTTON_PIN) == HIGH) {
+    Serial.println("down button!");
+    cursorY = cursorY - 1 < 0 ? 1 : cursorY - 1;
+    pressed = true;
+  }  
+  if(digitalRead(ARROW_LEFT_BUTTON_PIN) == HIGH) {
+    Serial.println("left button!");
+    cursorX = cursorX - selectUnit < 0 ? 16 - selectUnit : cursorX - selectUnit;
+    pressed = true;
+
+  }  
+  if(digitalRead(ARROW_RIGHT_BUTTON_PIN) == HIGH) {
+    Serial.println("right button!");
+    cursorX = (cursorX + selectUnit) % 16;
+    pressed = true;
+  }  
+  if(digitalRead(ARROW_SELECT_BUTTON_PIN) == HIGH) {
+    Serial.println("select button!");
+    pressed = true;
+  }
+  if(pressed) {
+    buttonInputTime = millis();
+  }
+}
+
+bool asyncDelay(unsigned long* lastMilliPtr, unsigned long delayMS) {
+  long milli = millis();
+  if(milli - *lastMilliPtr >= delayMS) {
+    *lastMilliPtr = milli;
+    return true;
+  } else {
+    return false;
+  };
 }
