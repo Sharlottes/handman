@@ -40,7 +40,7 @@ io.on("connection", (socket) => {
   });
   // for real-time game list updating
   GameManager.on("GAME_STARTED", (gameId) => {
-    socket.emit("GAME_STARTED", gameId);
+    socket.emit("GAME_STARTED", gameId, { foo: "bar" });
   });
 
   socket.on("START_GAME", (correctAnswer: string, wordAmount: number, callback: (id: string) => void) => {

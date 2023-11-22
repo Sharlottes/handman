@@ -4,10 +4,8 @@
 #include <ArduinoJSON.h>
 #include <SocketIOclient.h>
 #include <WebSocketsClient.h>
-
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-
 #include <Vector.h>
 
 #include "secret.h"
@@ -18,12 +16,14 @@
 #define ARROW_LEFT_BUTTON_PIN 7
 #define ARROW_SELECT_BUTTON_PIN 18
 
+void sendMatrix(int idx);
 void fetchRoomDisplayList();
 JsonArray getroomDisplayList();
 char* stringToChar(String str);
 void handleRoomIdSelected(int idx);
 void showItemSelection(Vector<String> items);
 String httpGETRequest(const char* serverName);
+void updateGameState(JsonObject newGameState);
 void updateLCD(int selectUnit, std::function<void(int)> onSelected);
 bool asyncDelay(unsigned long* lastMilliPtr, unsigned long delayMS);
 void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length);
@@ -73,14 +73,31 @@ void setup() {
   Serial.printf("[SETUP] Websocket Connecting...\n");
   socketIO.begin(SERVER_HOST, SERVER_PORT, "/socket.io/?EIO=4", IS_SERVER_SECURED ? "wss" : "ws");
   socketIO.onEvent(socketIOEvent);
+
+  // I2C
+  Wire.begin(8, 9);
 }
 
 void loop() {
   socketIO.loop();
+
   if(isProjectReady) {
     fetchRoomDisplayList();
     updateLCD(4, handleRoomIdSelected);
   }
+}
+
+void updateGameState(JsonObject newGameState) {
+  serializeJson(newGameState, Serial);
+  gameState = newGameState;
+
+  sendMatrix(10 - newGameState["life"].as<int>());
+}
+
+void sendMatrix(int idx) {
+  Wire.beginTransmission(8); // Arduino Uno의 I2C 주소
+  Wire.write(idx); // 전송하려는 값
+  Wire.endTransmission();
 }
 
 int cursorX = 0, cursorY = 0;
@@ -133,10 +150,18 @@ void handleRoomIdSelected(int idx) {
 void handleSocketEvent(String eventName, DynamicJsonDocument doc) {
   if(eventName == "GAME_STARTED") {
     fetchLastTime = millis() - 5000;
+    sendMatrix(0);
     Serial.println("[GAME] game started.");
   } else if(eventName == "USER_JOINED") {
-    gameState = doc[1];
+    updateGameState(doc[2]);
     Serial.println("[GAME] user joined.");
+  } else if(eventName == "WORD_TRIED") {
+    updateGameState(doc[3]);
+    Serial.println("[GAME] word tried.");
+  } else if(eventName == "GAME_ENDED") {
+    Serial.println("[GAME] game ended.");
+    delay(1000);
+    sendMatrix(0);
   }
 }
 
@@ -290,10 +315,10 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
 #pragma region Utilities
 
 char* stringToChar(String str) {
-    unsigned int len = str.length() + 1;
-    char* buf = new char[len];
-    str.toCharArray(buf, len);
-    return buf;
+  unsigned int len = str.length() + 1;
+  char* buf = new char[len];
+  str.toCharArray(buf, len);
+  return buf;
 }
 
 bool asyncDelay(unsigned long* lastMilliPtr, unsigned long delayMS) {
