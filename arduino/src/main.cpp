@@ -24,6 +24,7 @@ void handleRoomIdSelected(int idx);
 void showItemSelection(Vector<String> items);
 String httpGETRequest(const char* serverName);
 void updateGameState(JsonObject newGameState);
+void handleSocketEvent(String eventName, DynamicJsonDocument doc);
 void updateLCD(int selectUnit, std::function<void(int)> onSelected);
 bool asyncDelay(unsigned long* lastMilliPtr, unsigned long delayMS);
 void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length);
